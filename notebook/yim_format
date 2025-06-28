@@ -1,0 +1,49 @@
+=================================================
+# Notes                                         #
+=================================================
+No tabs \ leading whitespace in actual format (just using to show grouping).
+
+
+
+=================================================
+# Format                                        #
+=================================================
+<header>
+Object <name>:
+	Materials:
+		C <color>
+	Normals:
+		N <direction>
+		...
+	Vertices:
+		V <position>
+		...
+	Surface <name>:
+		Material:
+			P <mat-idx>
+		Faces:
+			F <norm-idx> <vert-idxs> <center> <size> <dims>
+			...
+		Raster:
+			R <faceidx> <count> <position_1> ... <position_c>
+			...
+		Volume:
+			M <level> <position> <dims>
+			...
+	...
+...
+
+
+
+=================================================
+# Example                                       #
+=================================================
+# YIM (Ylands Import Model) 0.0.1
+# https://github.com/BinarySemaphore/ylands_importer
+Object Test:
+Surface 000:
+Faces:
+C 0.5 0.8 0.5
+F
+Vectices:
+V 
