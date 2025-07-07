@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 
+#include "svo.hpp"
 #include "objwavefront.hpp"
 
 YIMMaterial::YIMMaterial() {
@@ -23,8 +24,12 @@ YIMFace::YIMFace(const Face& face) {
 	}
 	
 	// TODO: Compute size
+	this->size = 0;
 
 	// TODO: Compute dims
+	this->dims[0] = 0;
+	this->dims[1] = 0;
+	this->dims[2] = 0;
 }
 
 bool YIMSurface::isEmpty() {
@@ -35,15 +40,24 @@ void YIMSurface::addFace(const Face& face) {
 	this->faces.emplace_back(face);
 }
 
+class FaceData {
+public:
+	Vector3 verts[3];
+};
+
 YIMObject::YIMObject(const ObjWavefront& model) {
 	int i, j;
+	float one_third = 1.0f / 3.0f;
 	Vector3 *p1, *p2, *p3;
-	Vector3 normal;
+	Vector3 normal, center, min, max;
+	Vector3 points[3];
 	YIMSurface* default_surface;
 	YIMSurface* current_surface;
 	vector<int> surfaces_to_remove;
 	unordered_map<Vector3, int> normal_index_map;
 	unordered_map<string, YIMSurface*> material_surface_map;
+	vector<SVOItem<int>*> svo_items;
+	SVO<int>* svo;
 
 	this->normals.reserve(model.norm_count);
 	this->vertices.reserve(model.vert_count);
@@ -120,6 +134,36 @@ YIMObject::YIMObject(const ObjWavefront& model) {
 		}
 	}
 	normal_index_map.clear();
+
+	// TODO: Compute raster for each face
+
+	// TODO: Compute model volume
+	int surface_count = 0;
+	ObjWavefront* debug;
+	string debug_name = "debug_svo_";
+	for (YIMSurface& surface : this->surfaces) {
+		for (YIMFace& face : surface.faces) {
+			for (i = 0; i < 3; i++) {
+				points[i] = this->vertices[face.vertex_indices[i]];
+			}
+			getBounds<Vector3>(points, 3, min, max);
+			center = (points[0] + points[1] + points[2]) * one_third;
+			svo_items.push_back(new SVOItem<int>(center, max - min));
+		}
+	}
+	svo = new SVO<int>(svo_items.data(), svo_items.size());
+	svo->subdivide(20, 0);
+	svo->prune();
+	svo_items.clear();
+
+	debug = svoDebugPrepareMesh();
+	svoDebugAddToMesh<int>(svo, debug);
+	debug->save((debug_name + to_string(surface_count) + ".obj").c_str());
+	// TODO: remove debug stuff and OBJ + Material saving functions
+	delete debug;
+
+	surface_count++;
+	delete svo;
 }
 
 void YIMObject::write(const string& filename) {

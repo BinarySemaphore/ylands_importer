@@ -10,6 +10,8 @@ No tabs \ leading whitespace in actual format (just using to show grouping).
 =================================================
 <header>
 Object <name>:
+	Bounds:
+		B <scale>
 	Materials:
 		C <color>
 	Normals:
@@ -27,7 +29,7 @@ Object <name>:
 		Raster:
 			R <faceidx> <count> <position_1> ... <position_c>
 			...
-		Volume:
+		SVO:
 			M <level> <position> <dims>
 			...
 	...

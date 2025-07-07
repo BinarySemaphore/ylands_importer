@@ -172,6 +172,44 @@ std::vector<Material> Material::load(const char* filename) {
 	return materials;
 }
 
+void Material::save(const char* filename, const std::vector<const Material*>& materials) {
+	std::ofstream f(filename);
+	if (!f.is_open()) {
+		throw SaveException(
+			"Cannot open file for writing \"" + std::string(filename) + "\""
+		);
+	}
+
+	f << std::fixed << std::setprecision(6);
+	//f << headerLine();
+
+	for (int i=0; i < materials.size(); i++) {
+		f << "\n\nnewmtl " << materials[i]->name;
+		f << "\nKa "
+		 << materials[i]->ambient.x << " "
+		 << materials[i]->ambient.y << " "
+		 << materials[i]->ambient.z;
+		f << "\nKd "
+		 << materials[i]->diffuse.x << " "
+		 << materials[i]->diffuse.y << " "
+		 << materials[i]->diffuse.z;
+		f << "\nKs "
+		 << materials[i]->specular.x << " "
+		 << materials[i]->specular.y << " "
+		 << materials[i]->specular.z;
+		f << "\nKe "
+		 << materials[i]->emissive.x << " "
+		 << materials[i]->emissive.y << " "
+		 << materials[i]->emissive.z;
+		f << "\nNs " << materials[i]->spec_exp;
+		f << "\nNi " << materials[i]->optical_density;
+		f << "\nd " << materials[i]->dissolve;
+		f << "\nillum " << (int)materials[i]->illum_model;
+	}
+
+	f.close();
+}
+
 bool Material::operator==(const Material& mat) const {
 	return this->ambient == mat.ambient &&
 		   this->diffuse == mat.diffuse &&
@@ -509,6 +547,110 @@ void ObjWavefront::load(const char* filename, bool cache) {
 			}
 		}
 	}
+}
+
+void ObjWavefront::save(const char* filename) const {
+	int i;
+	std::string base_dir;
+	std::string mat_filename;
+	std::vector<std::string>::iterator check;
+	std::vector<std::string> unique_mats;
+	std::vector<std::string> orphan_mats;
+	std::vector<const Material*> materials_flat;
+
+	// Save Material Library
+	for (i = 0; i < this->surface_count; i++) {
+		if (this->surfaces[i].face_count == 0) continue;
+		for (std::pair<int, std::string> kv : (*this->surfaces[i].material_refs)) {
+			check = std::find(unique_mats.begin(), unique_mats.end(), kv.second);
+			if (check != unique_mats.end()) continue;
+			unique_mats.push_back(kv.second);
+		}
+	}
+	if (unique_mats.size() > 0) {
+		base_dir = f_base_dir(filename);
+		mat_filename = f_base_filename_no_ext(filename) + ".mtl";
+		for (i = 0; i < unique_mats.size(); i++) {
+			if (this->materials.find(unique_mats[i]) != this->materials.end()) {
+				materials_flat.push_back(&this->materials.at(unique_mats[i]));
+			} else {
+				orphan_mats.push_back(unique_mats[i]);
+			}
+		}
+		if (materials_flat.size() > 0) {
+			Material::save((base_dir + mat_filename).c_str(), materials_flat);
+		}
+		unique_mats.clear();
+		materials_flat.clear();
+	}
+
+	std::ofstream f(filename);
+	if (!f.is_open()) {
+		throw SaveException(std::strcat("Cannot open file for writing ", filename));
+	}
+
+	f << std::fixed << std::setprecision(6);
+	//f << headerLine();
+
+	// Material Library
+	if (mat_filename.size() > 0) {
+		f << "\nmtllib " << mat_filename;
+	}
+
+	// Object
+	f << "\no " << this->name;
+
+	// Vectors
+	for (i = 0; i < this->vert_count; i++) {
+		f << "\nv "
+		 << this->verts[i].x << " "
+		 << this->verts[i].y << " "
+		 << this->verts[i].z;
+	}
+	// Normals
+	for (i = 0; i < this->norm_count; i++) {
+		f << "\nvn "
+		 << this->norms[i].x << " "
+		 << this->norms[i].y << " "
+		 << this->norms[i].z;
+	}
+	// UVs
+	for (i = 0; i < this->uv_count; i++) {
+		f << "\nvt "
+		 << this->uvs[i].x << " "
+		 << this->uvs[i].y;
+	}
+	// Surfaces
+	for (i = 0; i < this->surface_count; i++) {
+		f << "\ns " << i;
+		// Faces
+		for (int j = 0; j < this->surfaces[i].face_count; j++) {
+			// Material Reference
+			// If face index is in material reference and material reference is not in ophan materials
+			if (this->surfaces[i].material_refs->find(j)
+				!= this->surfaces[i].material_refs->end() &&
+				std::find(
+					orphan_mats.begin(),
+					orphan_mats.end(),
+					(*this->surfaces[i].material_refs)[j]
+				)
+				== orphan_mats.end()
+			) {
+				f << "\nusemtl " << (*this->surfaces[i].material_refs)[j];
+			}
+
+			f << "\nf";  // Note: space moved to forward of face data in loop
+			for (int k = 0; k < 3; k++) {
+				f << " " << this->surfaces[i].faces[j].vert_index[k] << "/";
+				if (this->uv_count != 0) {
+					f << this->surfaces[i].faces[j].uv_index[k];
+				}
+				f << "/" << this->surfaces[i].faces[j].norm_index[k];
+			}
+		}
+	}
+
+	f.close();
 }
 
 std::vector<Material*> ObjWavefront::getSurfaceMaterials(int surface_index) {

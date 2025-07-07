@@ -11,5 +11,7 @@ int main(int argc, char** argv) {
 	YIMObject yim(model);
 	model.clear();
 
+	yim.write("output.yim");
+
 	return 0;
 }

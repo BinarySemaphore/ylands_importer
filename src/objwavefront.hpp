@@ -43,6 +43,7 @@ public:
 	std::string name;
 
 	static std::vector<Material> load(const char* filename);
+	static void save(const char* filename, const std::vector<const Material*>& materials);
 	static std::string getColorHashString(Vector3 color);
 
 	Material();
@@ -88,6 +89,7 @@ public:
 
 	void offset(const Vector3& offset, bool cache);
 	void load(const char* filename, bool cache);
+	void save(const char* filename) const;
 	std::vector<Material*> getSurfaceMaterials(int surface_index);
 	void setSurfaceMaterial(int surface_index, Material& material);
 	void setMaterial(Material& material);

@@ -16,6 +16,7 @@ set(target_1_sources
     config.cpp
     utils.cpp
     space.cpp
+    svo.cpp
     yim.cpp
     objwavefront.cpp
 )
