@@ -147,8 +147,8 @@ YIMObject::YIMObject(const ObjWavefront& model) {
 				points[i] = this->vertices[face.vertex_indices[i]];
 			}
 			getBounds<Vector3>(points, 3, min, max);
-			center = (points[0] + points[1] + points[2]) * one_third;
-			svo_items.push_back(new SVOItem<int>(center, max - min));
+			//center = (points[0] + points[1] + points[2]) * one_third;
+			svo_items.push_back(new SVOItem<int>((max + min) * 0.5f, max - min));
 		}
 	}
 	svo = new SVO<int>(svo_items.data(), svo_items.size());

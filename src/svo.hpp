@@ -226,29 +226,41 @@ void SVO<T>::subdivide(int max_depth, int depth) {
 			}
 		}
 	}
-	// Check if subdivisions actually split up children or not
-	// bool no_change = true;
-	// for (SVO<T>& div : this->subdivisions) {
-	// 	if (div.children.size() < this->children.size()) {
-	// 		no_change = false;
-	// 		break;
+	// Remove empty subdivisions
+	//bool no_change = true;
+	std::vector<int> remove;
+	remove.reserve(8);
+	for (i = 0; i < this->subdivisions.size(); i++) {
+		if (this->subdivisions[i].children.size() == 0) {
+			remove.push_back(i);
+		}
+	}
+	for (i = remove.size() - 1; i >= 0; i--) {
+		this->subdivisions.erase(this->subdivisions.begin() + remove[i]);
+	}
+	remove.clear();
+
+	// Remove subdivisions which haven't changed the children distribution
+	// TODO: and are not a square multiple of min_dims
+	// for (i = 0; i < this->subdivisions.size(); i++) {
+	// 	if (this->subdivisions[i].children.size() == this->children.size()) {
+	// 		remove.push_back(i);
 	// 	}
 	// }
-	// // Revert and cancel subdivision
-	// if (no_change) {
-	// 	this->subdivisions.clear();
-	// 	return;
-	// // Commit to subdivisions
-	// } else {
-	// 	for (SVOItem<T>* item : this->children) {
-	// 		item->parents.erase(this);
-	// 	}
-	// 	for (SVO<T>& div : this->subdivisions) {
-	// 		for (SVOItem<T>* item : div.children) {
-	// 			item->parents.insert(&div);
-	// 		}
-	// 	}
+	// for (i = remove.size() - 1; i >= 0; i--) {
+	// 	this->subdivisions.erase(this->subdivisions.begin() + remove[i]);
 	// }
+	// remove.clear();
+
+	// Commit to subdivisions
+	for (SVOItem<T>* item : this->children) {
+		item->parents.erase(this);
+	}
+	for (SVO<T>& div : this->subdivisions) {
+		for (SVOItem<T>* item : div.children) {
+			item->parents.insert(&div);
+		}
+	}
 	// Clear children for self
 	this->children.clear();
 

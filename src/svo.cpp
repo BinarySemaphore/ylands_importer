@@ -11,7 +11,7 @@ WARNING: Not intended for general use!
 
 // Explicitly not using NEAR_ZERO from utils; AABB::overlap wants buffer room
 // to handle SVO neighbors on nearly perfect divisions.
-const Vector3 NEAR_ZERO_V3(0.001f, 0.001f, 0.001f);
+const Vector3 NEAR_ZERO_V3(0.00001f, 0.00001f, 0.00001f);
 
 AABB::AABB() {
 	// Empty
